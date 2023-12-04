@@ -1,0 +1,433 @@
+openapi: 3.0.3
+info:
+  title: Ticketos API
+  description: API for ticket provider for events
+  version: 1.0.0
+servers:
+  - url: 'https://127.0.0.1:7565/api/v1'
+    description: "Local server"
+paths:
+  /live:
+    get:
+      tags:
+        - probes
+      summary: Live probe
+      responses:
+        200:
+          description: App is live
+  /ready:
+    get:
+      tags:
+        - probes
+      summary: Ready probe
+      responses:
+        200:
+          description: App is ready
+  /event:
+    post:
+      tags:
+        - event
+      summary: Create event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequestDTO'
+      responses:
+        201:
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponseDTO'
+  /order:
+    post:
+      tags:
+        - order
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequestDTO'
+      responses:
+        201:
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseDTO'
+  /webhook/paymaster:
+    post:
+      tags:
+        - webhook paymaster
+      summary: Callback endpoint for payment system paymaster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayMasterWebHookRequestDTO'
+      responses:
+        200:
+          description: Order updated successfully
+
+components:
+  schemas:
+    VisitorName:
+      description: Name of the event visitor
+      type: string
+      minLength: 3
+      maxLength: 150
+    VisitorEmail:
+      description: Email of the event visitor
+      type: string
+      format: email
+    VisitorPhone:
+      description: Phone of the event visitor
+      type: string
+      pattern: ^[0-9]
+    PromocodeID:
+      description: Id of the promocode
+      type: string
+      format: uuid
+    TicketCategoryID:
+      description: Id of the ticket category
+      type: string
+      format: uuid
+    TicketCategoryIDs:
+      description: Id of the ticket category
+      type: array
+      items:
+        $ref: '#/components/schemas/TicketCategoryID'
+    OrderID:
+      description: Id of the order
+      type: string
+      format: uuid
+    OrderStatus:
+      description: Status of the order
+      type: string
+      enum:
+        - prepared
+        - awaiting_payment
+        - completed
+    OrderFullPrice:
+      description: Full price of the order. Sum of tickets full price. Without applied promo codes. Calculated in kopecks. 100 kopecks are equal to 1 ruble
+      type: number
+      minimum: 1
+    OrderBuyPrice:
+      description: Buy price of the order. Sum of tickets buy price. Buy price is price that customer will pay for that order. With applied promo codes. Calculated in kopecks. 100 kopecks are equal to 1 ruble
+      type: number
+      minimum: 1
+    PaymentID:
+      description: Payment id in payment provider system(paymaster)
+      type: string
+    PaymentURL:
+      description: Payment link for customer.
+      type: string
+      format: url
+    EventID:
+      description: Id of the event
+      type: string
+      format: uuid
+    TicketCategoryPrice:
+      description: Price of ticket category. Calculated in kopecks. 100 kopecks are equal to 1 ruble
+      type: number
+      minimum: 1
+    TicketCategoryName:
+      description: Name of the ticket category
+      type: string
+    TicketCategoryDescription:
+      description: Description of the ticket category
+      type: string
+    TicketID:
+      description: Id of the ticket
+      type: string
+      format: uuid
+    TicketFullPrice:
+      description: Full price of the ticket. Without applied promo codes. Calculated in kopecks. 100 kopecks are equal to 1 ruble
+      type: number
+      minimum: 1
+    TicketBuyPrice:
+      description: Buy price of the ticket. Buy price is price that customer will pay for that order. With applied promo codes. Calculated in kopecks. 100 kopecks are equal to 1 ruble
+      type: number
+      minimum: 1
+    EventName:
+      description: Name of the event
+      type: string
+    EventDescription:
+      description: Description of the event
+      type: string
+    EventPlace:
+      description: Location of the event
+      type: string
+    EventAgeRating:
+      description: Minimum age of the event visitor
+      type: number
+      minimum: 0
+      maximum: 21
+    EventStartAt:
+      description: Start time of the event
+      type: string
+      pattern: /([0-9]{4})-(?:[0-9]{2})-([0-9]{2})/
+      example: "2019-05-17"
+    EventEndAt:
+      description: End time of the event
+      type: string
+      pattern: /([0-9]{4})-(?:[0-9]{2})-([0-9]{2})/
+      example: "2019-05-17"
+    InvoiceID:
+      description: Id of paymaster invoice
+      type: string
+    InvoiceCreated:
+      description: Created time of the paymaster invoice
+      type: string
+      format: 'date-time'
+    InvoiceTestMode:
+      description: Test mode of the paymaster invoice. True if test mode enabled. With test mode you can pay with test cards.
+      type: boolean
+    InvoiceStatus:
+      description: Status of the paymaster invoice
+      type: string
+      enum:
+        - Authorized
+        - Settled
+        - Cancelled
+        - Rejected
+        - Confirmation
+        - Pending
+    InvoiceMerchantID:
+      description: Merchant id of the paymaster invoice.
+      type: string
+    AmountValue:
+      description: The amount of money in the paymaster invoice.
+      type: number
+      format: float
+    AmountCurrency:
+      description: Currency in the paymaster invoice.
+      type: string
+      enum:
+        - RUB
+    InvoiceAmount:
+      type: object
+      required:
+        - value
+        - currency
+      properties:
+        value:
+          $ref: '#/components/schemas/AmountValue'
+        currency:
+          $ref: '#/components/schemas/AmountCurrency'
+    InvoiceDescription:
+      description: Custom description of the invoice
+      type: string
+    InvoiceOrderNo:
+      description: OrderNo of the paymaster invoice. In fact, this is the OrderID.
+      type: string
+    InvoiceInvoice:
+      type: object
+      required:
+        - description
+        - orderNo
+      properties:
+        description:
+          $ref: '#/components/schemas/InvoiceDescription'
+        orderNo:
+          $ref: '#/components/schemas/InvoiceOrderNo'
+    PaymentMethod:
+      description: Payment method of the invoice.
+      type: string
+    PaymentInstrumentTitle:
+      description: Extra information about of payment. For example, creadit card mask.
+      type: string
+    PaymentData:
+      type: object
+      required:
+        - paymentData
+        - paymentInstrumentTitle
+      properties:
+        paymentData:
+          $ref: '#/components/schemas/PaymentData'
+        paymentInstrumentTitle:
+          $ref: '#/components/schemas/PaymentInstrumentTitle'
+
+    PayMasterWebHookRequestDTO:
+      type: object
+      required:
+        - id
+        - created
+        - testMode
+        - status
+        - merchantId
+        - amount
+        - invoice
+        - paymentData
+      properties:
+        id:
+          $ref: '#/components/schemas/InvoiceID'
+        created:
+          $ref: '#/components/schemas/InvoiceCreated'
+        testMode:
+          $ref: '#/components/schemas/InvoiceTestMode'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        merchantId:
+          $ref: '#/components/schemas/InvoiceMerchantID'
+        amount:
+          $ref: '#/components/schemas/InvoiceAmount'
+        invoice:
+          $ref: '#/components/schemas/InvoiceInvoice'
+        paymentData:
+          $ref: '#/components/schemas/PaymentData'
+
+    CreateEventRequestDTO:
+      type: object
+      required:
+        - name
+        - place
+        - ageRating
+        - eventAt
+        - endAt
+      properties:
+        name:
+          $ref: '#/components/schemas/EventName'
+        description:
+          $ref: '#/components/schemas/EventDescription'
+        place:
+          $ref: '#/components/schemas/EventPlace'
+        ageRating:
+          $ref: '#/components/schemas/EventAgeRating'
+        startAt:
+          $ref: '#/components/schemas/EventStartAt'
+        endAt:
+          $ref: '#/components/schemas/EventEndAt'
+
+
+    CreateOrderRequestDTO:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - ticketCategoryIDs
+      properties:
+        name:
+          $ref: "#/components/schemas/VisitorName"
+        email:
+          $ref: "#/components/schemas/VisitorEmail"
+        phone:
+          $ref: "#/components/schemas/VisitorPhone"
+        promocodeID:
+          $ref: "#/components/schemas/PromocodeID"
+        ticketCategoryIDs:
+          $ref: "#/components/schemas/TicketCategoryIDs"
+
+    EventResponseDTO:
+      type: object
+      required:
+        - id
+        - name
+        - place
+        - ageRating
+        - startAt
+        - endAt
+      properties:
+        id:
+          $ref: '#/components/schemas/EventID'
+        name:
+          $ref: '#/components/schemas/EventName'
+        description:
+          $ref: '#/components/schemas/EventDescription'
+        place:
+          $ref: '#/components/schemas/EventPlace'
+        ageRating:
+          $ref: '#/components/schemas/EventAgeRating'
+        startAt:
+          $ref: '#/components/schemas/EventStartAt'
+        endAt:
+          $ref: '#/components/schemas/EventEndAt'
+
+    TicketResponseDTO:
+      type: object
+      required:
+        - id
+        - ticketCategory
+        - fullPrice
+        - buyPrice
+      properties:
+        id:
+          $ref: '#/components/schemas/TicketID'
+        ticketCategory:
+          $ref: '#/components/schemas/TicketCategoryResponseDTO'
+        promocodeID:
+          $ref: '#/components/schemas/PromocodeID'
+        fullPrice:
+          $ref: '#/components/schemas/TicketFullPrice'
+        buyPrice:
+          $ref: '#/components/schemas/TicketBuyPrice'
+
+    TicketCategoryResponseDTO:
+      type: object
+      required:
+        - id
+        - eventID
+        - price
+        - name
+      properties:
+        id:
+          $ref: '#/components/schemas/TicketCategoryID'
+        eventID:
+          $ref: '#/components/schemas/EventID'
+        price:
+          $ref: '#/components/schemas/TicketCategoryPrice'
+        name:
+          $ref: '#/components/schemas/TicketCategoryName'
+        description:
+          $ref: '#/components/schemas/TicketCategoryDescription'
+
+    PaymentResponseDTO:
+      description: Exist only after order status = awaiting_payment
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          $ref: '#/components/schemas/PaymentID'
+        url:
+          $ref: '#/components/schemas/PaymentURL'
+
+    OrderResponseDTO:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - phone
+        - tickets
+        - status
+        - fullPrice
+        - buyPrice
+      properties:
+        id:
+          $ref: '#/components/schemas/OrderID'
+        name:
+          $ref: '#/components/schemas/VisitorName'
+        email:
+          $ref: '#/components/schemas/VisitorEmail'
+        phone:
+          $ref: '#/components/schemas/VisitorPhone'
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketResponseDTO'
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        fullPrice:
+          $ref: '#/components/schemas/OrderFullPrice'
+        buyPrice:
+          $ref: '#/components/schemas/OrderBuyPrice'
+        payment:
+          $ref: '#/components/schemas/PaymentResponseDTO'

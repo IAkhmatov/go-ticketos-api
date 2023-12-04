@@ -1,0 +1,26 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: KengoTODA/actions-setup-docker-compose@v1.1.10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Set up env
+        run: make up-utils
+
+      - name: Test
+        run: make test
