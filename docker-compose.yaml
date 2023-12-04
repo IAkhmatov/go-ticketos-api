@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  database:
+    image: postgres:16.1
+    container_name: postgres_ticketos_api
+    ports:
+      - "127.0.0.1:5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ticketos
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./1-create-db.sql:/docker-entrypoint-initdb.d/1-create-db.sql
+      - ./2-create-tables.sql:/docker-entrypoint-initdb.d/2-create-tables.sql
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api
+    depends_on:
+      - database
+
+volumes:
+  pg_data:
